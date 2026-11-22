@@ -131,7 +131,7 @@ It needs no secrets beyond the built-in `GITHUB_TOKEN`.
 
 ## Licence
 
-Copyright © the Booklet Imposer contributors. Licensed under the
+Copyright © 2026 Zuri Nimca Klaschka. Licensed under the
 [European Union Public Licence v. 1.2](LICENSE) (EUPL-1.2).
 
 Bundled third-party components keep their own licences:
