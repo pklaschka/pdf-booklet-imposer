@@ -96,3 +96,9 @@ test("the calibration sheet has a front and a back", async ({ page }) => {
   const pdf = await downloadPdf(page, "#calibration");
   expect(pdf.getPageCount()).toBe(2);
 });
+
+test("the header links to the source repository", async ({ page }) => {
+  const link = page.getByRole("link", { name: "Source on GitHub" });
+  await expect(link).toHaveAttribute("href", "https://github.com/pklaschka/pdf-booklet-imposer");
+  await expect(link).toHaveAttribute("rel", "noopener");
+});

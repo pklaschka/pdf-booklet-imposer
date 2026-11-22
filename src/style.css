@@ -1295,3 +1295,34 @@ kbd {
     opacity: 1;
   }
 }
+
+/* Link to the source repository, at the far end of the header. */
+.repo {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+  padding: 5px 12px;
+  border: 1px solid color-mix(in oklch, var(--key-muted) 45%, transparent);
+  border-radius: 999px;
+  color: var(--key-ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color 0.12s;
+}
+.repo:hover {
+  border-color: var(--key-muted);
+}
+.repo:focus-visible {
+  outline-color: var(--key-accent);
+}
+.repo svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: var(--key-accent);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
