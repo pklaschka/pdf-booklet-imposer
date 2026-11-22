@@ -3,3 +3,5 @@ dist
 public/pdfjs
 .DS_Store
 .vitest/
+test-results
+playwright-report

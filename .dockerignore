@@ -3,3 +3,7 @@ dist
 public/pdfjs
 .git
 .DS_Store
+e2e
+test-results
+playwright-report
+playwright.config.ts

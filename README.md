@@ -81,6 +81,7 @@ vp install       # install dependencies
 vp run dev       # dev server
 vp check         # format, lint and type checks (vp check --fix to apply fixes)
 vp test          # unit tests (layout maths, PDF output)
+vp run test:e2e  # browser tests (Playwright) against a fresh build
 vp run build     # production build to dist/
 ```
 
@@ -100,14 +101,24 @@ installed, `npm install` and `npm run dev|check|test|build` do the same.
 | `src/diagrams.ts`              | Live diagrams in the sidebar                       |
 | `src/main.ts`, `src/style.css` | UI                                                 |
 
+The browser tests live in `e2e/`. They need a browser once:
+`npx playwright install chromium`, or set `E2E_CHANNEL=chrome` to use an
+installed Chrome. Set `E2E_BASE_URL` to test something already running, for
+example the Docker image on `http://localhost:8080/`.
+
 ### Continuous delivery
 
-`.github/workflows/publish.yml` builds the image on every push to `main` and
-pushes it to the GitHub Container Registry as `ghcr.io/OWNER/REPO:latest` and
-`:sha-<commit>`. The Docker build runs `vp check` and the tests, so a
-failing check or test stops the push. It needs no secrets beyond the built-in
-`GITHUB_TOKEN`. The package is private on first publish; change its
-visibility in the repository's package settings if others should pull it.
+`.github/workflows/publish.yml` runs on every push to `main`:
+
+1. It builds the image. The Docker build runs `vp check` and the unit tests.
+2. It starts that image and runs the browser tests against it, so nginx, the
+   security headers and the built files are tested as they will ship.
+3. Only then does it push `ghcr.io/OWNER/REPO:latest` and `:sha-<commit>` for
+   amd64 and arm64.
+
+It needs no secrets beyond the built-in `GITHUB_TOKEN`. The package is private
+on first publish; change its visibility in the repository's package settings
+if others should pull it.
 
 ## Licence
 
