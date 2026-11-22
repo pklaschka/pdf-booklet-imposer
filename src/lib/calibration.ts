@@ -5,7 +5,7 @@ import {
   StandardFonts,
   popGraphicsState,
   rgb,
-} from "pdf-lib";
+} from "@cantoo/pdf-lib";
 import { beginSide } from "./impose";
 import { MM, PAPER_SIZES, mm, type Settings } from "./settings";
 

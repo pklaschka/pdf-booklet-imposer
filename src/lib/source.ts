@@ -1,21 +1,7 @@
-import type { PDFDocument, PDFPage } from "pdf-lib";
+import type { PDFDocument, PDFPage } from "@cantoo/pdf-lib";
+import type { Matrix } from "./geometry";
 import type { RefPage, Sides } from "./layout";
 import { mm, type Settings } from "./settings";
-
-/** PDF transformation matrix [a b c d e f]: x' = ax + cy + e, y' = bx + dy + f. */
-export type Matrix = [number, number, number, number, number, number];
-
-/** p -> outer(inner(p)) */
-export function compose(o: Matrix, i: Matrix): Matrix {
-  return [
-    o[0] * i[0] + o[2] * i[1],
-    o[1] * i[0] + o[3] * i[1],
-    o[0] * i[2] + o[2] * i[3],
-    o[1] * i[2] + o[3] * i[3],
-    o[0] * i[4] + o[2] * i[5] + o[4],
-    o[1] * i[4] + o[3] * i[5] + o[5],
-  ];
-}
 
 export interface PageGeom extends RefPage {
   /** Maps source user space to upright page space with the trim box at (0,0). */

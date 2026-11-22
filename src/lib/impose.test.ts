@@ -1,8 +1,9 @@
-import { PDFDocument, StandardFonts, degrees, rgb } from "pdf-lib";
+import { PDFDocument, StandardFonts, degrees, rgb } from "@cantoo/pdf-lib";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { describe, expect, it } from "vite-plus/test";
 import { buildCalibrationSheet } from "./calibration";
-import { impose, sideMatrix } from "./impose";
+import { sideMatrix } from "./geometry";
+import { impose } from "./impose";
 import { DEFAULT_SETTINGS, mm, type Settings } from "./settings";
 import { analyzePage } from "./source";
 

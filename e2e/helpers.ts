@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { PDFDocument, StandardFonts } from "pdf-lib";
+import { PDFDocument, StandardFonts } from "@cantoo/pdf-lib";
 
 const mm = (v: number) => (v * 72) / 25.4;
 

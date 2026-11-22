@@ -1,4 +1,5 @@
-import { outputPageSize, sideMatrix, type OutputSide } from "../lib/impose";
+import { outputPageSize, sideMatrix } from "../lib/geometry";
+import type { OutputSide } from "../lib/impose";
 import type { Layout } from "../lib/layout";
 import { mm, toMm, type Settings } from "../lib/settings";
 

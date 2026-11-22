@@ -1,13 +1,10 @@
 import "@fontsource-variable/archivo/wdth.css";
 import "@fontsource/ibm-plex-mono/latin-400.css";
 import "@fontsource/ibm-plex-mono/latin-500.css";
-import { PDFDocument } from "pdf-lib";
-import { buildCalibrationSheet } from "./lib/calibration";
-import { impose, type OutputSide } from "./lib/impose";
+import type { PDFDocument } from "@cantoo/pdf-lib";
+import type { OutputSide } from "./lib/impose";
 import { computeLayout, type Layout, type RefPage } from "./lib/layout";
 import { loadSettings, saveSettings } from "./lib/persist";
-import { renderPdf } from "./lib/preview";
-import { buildSample } from "./lib/sample";
 import { DEFAULT_SETTINGS, PAPER_SIZES, mm, type Settings } from "./lib/settings";
 import { analyzePage } from "./lib/source";
 import { drawOffsetDiagram, guidesOverlay, marksDiagram, sheetDiagram } from "./ui/diagrams";
@@ -22,6 +19,10 @@ import { initTemplates } from "./ui/templates";
  * binds the settings form, renders the preview and wires the feature modules
  * in src/ui together.
  */
+
+/** The PDF libraries, fetched once on first use (and warmed up when the browser is idle). */
+let pdfTools: Promise<typeof import("./lib/pdf-tools")> | undefined;
+const loadPdfTools = () => (pdfTools ??= import("./lib/pdf-tools"));
 
 const form = $<HTMLFormElement>("settings");
 const fileInput = $<HTMLInputElement>("file");
@@ -123,6 +124,7 @@ function showFileError(message: string) {
 async function openPdf(name: string, bytes: ArrayBuffer | Uint8Array) {
   fileInfo.textContent = "Reading…";
   try {
+    const { PDFDocument } = await loadPdfTools();
     const doc = await PDFDocument.load(bytes);
     if (doc.getPageCount() === 0) throw new Error("This PDF has no pages.");
     fileInfo.classList.remove("error");
@@ -218,6 +220,7 @@ async function render() {
   if (!source) return;
   const id = ++run;
   try {
+    const { impose, renderPdf } = await loadPdfTools();
     let result = await impose(source.doc, settings, { sheets: [sheet] });
     if (sheet >= result.layout.sheets.length) {
       sheet = result.layout.sheets.length - 1;
@@ -368,6 +371,7 @@ async function downloadBooklet(btn: HTMLButtonElement) {
   btn.textContent = count ? `Building ${plural(count, "sheet")}…` : "Building…";
   let done = false;
   try {
+    const { impose } = await loadPdfTools();
     const { bytes, layout: made } = await impose(source.doc, settings);
     const suffix = settings.sides === "both" ? "" : `-${settings.sides}s`;
     download(bytes, `${source.name.replace(/\.pdf$/i, "")}-booklet${suffix}.pdf`);
@@ -417,7 +421,7 @@ $("reset").addEventListener("click", () => {
 $("pick").addEventListener("click", () => fileInput.click());
 $("pick2").addEventListener("click", () => fileInput.click());
 $("sample").addEventListener("click", async () =>
-  openPdf("sample-booklet.pdf", await buildSample()),
+  openPdf("sample-booklet.pdf", await (await loadPdfTools()).buildSample()),
 );
 fileInput.addEventListener("change", () => {
   const f = fileInput.files?.[0];
@@ -464,6 +468,7 @@ $("calibration").addEventListener("click", async () => {
   const paper =
     layout && settings.paper === "auto" ? { w: layout.paperW, h: layout.paperH } : undefined;
   const template = templates.current() && !templates.isModified() ? templates.current() : undefined;
+  const { buildCalibrationSheet } = await loadPdfTools();
   download(await buildCalibrationSheet(settings, paper, { template }), "duplex-calibration.pdf");
 });
 
@@ -472,3 +477,7 @@ window.addEventListener("resize", () => {
   clearTimeout(resizeTimer);
   resizeTimer = window.setTimeout(() => source && refresh(true), 250);
 });
+
+// Fetch the PDF libraries in the background so the first file opens without a wait.
+if ("requestIdleCallback" in window) requestIdleCallback(() => void loadPdfTools());
+else setTimeout(() => void loadPdfTools(), 1500);
