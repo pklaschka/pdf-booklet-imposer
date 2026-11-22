@@ -9,6 +9,9 @@
   --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --header-h: 56px;
+  /* Shared with src/ui/sections.ts, which reads them from here. */
+  --tab-h: 48px;
+  --collapse: 280ms;
 
   --key: oklch(0.2 0.02 172);
   --key-ink: oklch(0.95 0.02 172);
@@ -30,6 +33,7 @@
   --accent-ink: oklch(0.99 0.01 32);
   --accent-wash: oklch(0.95 0.035 32);
 
+  --edge-shade: oklch(0.2 0.02 172 / 0.24);
   --sheet: #fff;
   --sheet-ink: oklch(0.22 0.02 172);
   --warn-bg: oklch(0.94 0.07 90);
@@ -67,6 +71,7 @@
     --accent: oklch(0.7 0.17 38);
     --accent-ink: oklch(0.17 0.03 38);
     --accent-wash: oklch(0.3 0.06 38);
+    --edge-shade: oklch(0 0 0 / 0.45);
     --warn-bg: oklch(0.32 0.06 85);
     --warn-ink: oklch(0.92 0.08 90);
     --err-bg: oklch(0.31 0.08 28);
@@ -119,6 +124,8 @@ body {
   fill: none;
   stroke: var(--key-accent);
   stroke-width: 1.6;
+  /* Clicks a quarter turn whenever the imposition has been rebuilt. */
+  transition: transform 0.6s var(--ease-out);
 }
 .top h1 {
   margin: 0;
@@ -383,7 +390,7 @@ summary {
   cursor: pointer;
   font-weight: 700;
   font-stretch: 108%;
-  height: 48px;
+  height: var(--tab-h);
   padding-right: 4px;
   list-style: none;
   background: var(--paper);
@@ -434,9 +441,9 @@ h3 {
     opacity: 0;
     overflow: clip;
     transition:
-      height 0.28s ease,
+      height var(--collapse) ease,
       opacity 0.22s ease,
-      content-visibility 0.28s allow-discrete;
+      content-visibility var(--collapse) allow-discrete;
   }
   details[open]::details-content {
     height: auto;
@@ -860,7 +867,9 @@ kbd {
 }
 /* Shown after a download: how to print what was just made. */
 .recipe {
+  --tilt: 0deg;
   display: flex;
+  animation: lay-down 0.4s var(--ease-out) backwards;
   gap: 12px;
   background: var(--sheet);
   color: var(--sheet-ink);
@@ -953,10 +962,6 @@ kbd {
 }
 .sides.enter.backward figure {
   --from: -36px;
-}
-.recipe {
-  --tilt: 0deg;
-  animation: lay-down 0.4s var(--ease-out) backwards;
 }
 @media (prefers-reduced-motion: reduce) {
   .sides.enter figure,
@@ -1057,11 +1062,6 @@ kbd {
 }
 
 /* ---------- delight: small responses at meaningful moments ---------- */
-
-/* Register mark clicks round when the imposition has been rebuilt. */
-.reg {
-  transition: transform 0.6s var(--ease-out);
-}
 
 /* The back outline slides to where the print lands. */
 #offsetDiagram .back {
@@ -1246,47 +1246,31 @@ kbd {
 /*
  * Section headings stay in view like tabs: headings above the open section
  * stack at the top of the panel, those below it at the bottom. Closed sections
- * stick as a whole; the open one only pins its heading. "settled" is set by
- * script once a closing section has finished collapsing.
+ * stick as a whole; the open one only pins its heading. Script sets --i (the
+ * section's position), --n (how many there are) and "settled" (once a closing
+ * section has finished collapsing), and marks the heading at the edge of each
+ * pinned stack so it can shade the content passing under it.
  */
 @media (min-width: 901px) {
   #settings {
-    --tab: 49px; /* heading height plus its rule */
-  }
-  #settings details:nth-of-type(1) {
-    --i: 0;
-  }
-  #settings details:nth-of-type(2) {
-    --i: 1;
-  }
-  #settings details:nth-of-type(3) {
-    --i: 2;
-  }
-  #settings details:nth-of-type(4) {
-    --i: 3;
+    --tab: calc(var(--tab-h) + 1px); /* heading plus its rule */
+    /* Room so the last controls can scroll clear of the headings stacked at the bottom. */
+    padding-bottom: 20px;
   }
   #settings details.settled:not([open]) {
     position: sticky;
     top: calc(var(--i) * var(--tab));
-    bottom: calc((3 - var(--i)) * var(--tab));
+    bottom: calc((var(--n) - 1 - var(--i)) * var(--tab));
     z-index: 3;
     background: var(--paper);
+  }
+  #settings summary {
+    position: relative;
   }
   #settings details[open] > summary {
     position: sticky;
     top: calc(var(--i) * var(--tab));
     z-index: 2;
-  }
-  /* Room so the last controls can scroll clear of the headings stacked at the bottom. */
-  #settings {
-    padding-bottom: 20px;
-  }
-}
-
-/* The heading at the edge of a pinned stack shades the content passing under it. */
-@media (min-width: 901px) {
-  #settings summary {
-    position: relative;
   }
   #settings summary::before {
     content: "";
@@ -1301,24 +1285,13 @@ kbd {
   #settings .edge-top > summary::before {
     top: 100%;
     border-top: 1px solid var(--line);
-    background: linear-gradient(to bottom, oklch(0.2 0.02 172 / 0.24), transparent);
+    background: linear-gradient(to bottom, var(--edge-shade), transparent);
     opacity: 1;
   }
   #settings .edge-bottom > summary::before {
     bottom: calc(100% + 1px);
     border-bottom: 1px solid var(--line);
-    background: linear-gradient(to top, oklch(0.2 0.02 172 / 0.24), transparent);
+    background: linear-gradient(to top, var(--edge-shade), transparent);
     opacity: 1;
-  }
-  #settings details[open] > summary {
-    position: sticky;
-  }
-}
-@media (prefers-color-scheme: dark) {
-  #settings .edge-top > summary::before {
-    background: linear-gradient(to bottom, oklch(0 0 0 / 0.45), transparent);
-  }
-  #settings .edge-bottom > summary::before {
-    background: linear-gradient(to top, oklch(0 0 0 / 0.45), transparent);
   }
 }
