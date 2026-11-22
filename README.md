@@ -1,16 +1,19 @@
 # Booklet Imposer
 
+[![Publish image](https://github.com/pklaschka/pdf-booklet-imposer/actions/workflows/publish.yml/badge.svg)](https://github.com/pklaschka/pdf-booklet-imposer/actions/workflows/publish.yml)
+
 Turns a PDF into a print-ready saddle-stitch booklet, entirely in the browser.
 The server only delivers static files; documents are never uploaded.
 
 ## Run it
 
-With the published image (replace `OWNER` with the GitHub account or
-organisation that hosts this repository):
+With the published image:
 
 ```sh
-docker run -d -p 8080:8080 --read-only --tmpfs /tmp ghcr.io/OWNER/pdf-booklet-imposer:latest
+docker run -d -p 8080:8080 --read-only --tmpfs /tmp ghcr.io/pklaschka/pdf-booklet-imposer:latest
 ```
+
+Then open http://localhost:8080.
 
 Or build it yourself:
 
@@ -89,23 +92,25 @@ vp run build     # production build to dist/
 copy the pdf.js runtime assets into `public/pdfjs`. Without the `vp` CLI
 installed, `npm install` and `npm run dev|check|test|build` do the same.
 
-| Path                                  | Purpose                                                        |
-| ------------------------------------- | -------------------------------------------------------------- |
-| `src/lib/layout.ts`                   | Page order, scaling, creep and gutter (pure maths)             |
-| `src/lib/source.ts`                   | Page boxes, bleed detection, page rotation                     |
-| `src/lib/impose.ts`                   | Draws the sheets with pdf-lib                                  |
-| `src/lib/calibration.ts`              | Duplex calibration sheet                                       |
-| `src/lib/persist.ts`                  | Saved settings: storage format and migration                   |
-| `src/lib/sample.ts`                   | Built-in sample booklet                                        |
-| `src/lib/preview.ts`                  | pdf.js preview                                                 |
-| `src/main.ts`                         | App shell: state, settings form, preview, wiring               |
-| `src/ui/templates.ts`                 | Settings templates                                             |
-| `src/ui/onboarding.ts`                | First-booklet tips and the bleed question                      |
-| `src/ui/sections.ts`                  | Sidebar accordion with pinned headings                         |
-| `src/ui/diagrams.ts`                  | Sidebar diagrams and the preview guide overlay                 |
-| `src/ui/dropzone.ts`, `src/ui/dom.ts` | Drag and drop, small DOM helpers                               |
-| `src/style.css`                       | Styles; sizes and timings shared with script are CSS variables |
-| `e2e/`                                | Browser tests                                                  |
+| Path                                  | Purpose                                                           |
+| ------------------------------------- | ----------------------------------------------------------------- |
+| `src/lib/layout.ts`                   | Page order, scaling, creep and gutter (pure maths)                |
+| `src/lib/source.ts`                   | Page boxes, bleed detection, page rotation                        |
+| `src/lib/impose.ts`                   | Draws the sheets with pdf-lib                                     |
+| `src/lib/geometry.ts`                 | Sheet transforms (rotation, duplex offset), free of PDF libraries |
+| `src/lib/pdf-tools.ts`                | Everything that needs the PDF libraries, loaded on demand         |
+| `src/lib/calibration.ts`              | Duplex calibration sheet                                          |
+| `src/lib/persist.ts`                  | Saved settings: storage format and migration                      |
+| `src/lib/sample.ts`                   | Built-in sample booklet                                           |
+| `src/lib/preview.ts`                  | pdf.js preview                                                    |
+| `src/main.ts`                         | App shell: state, settings form, preview, wiring                  |
+| `src/ui/templates.ts`                 | Settings templates                                                |
+| `src/ui/onboarding.ts`                | First-booklet tips and the bleed question                         |
+| `src/ui/sections.ts`                  | Sidebar accordion with pinned headings                            |
+| `src/ui/diagrams.ts`                  | Sidebar diagrams and the preview guide overlay                    |
+| `src/ui/dropzone.ts`, `src/ui/dom.ts` | Drag and drop, small DOM helpers                                  |
+| `src/style.css`                       | Styles; sizes and timings shared with script are CSS variables    |
+| `e2e/`                                | Browser tests                                                     |
 
 The browser tests live in `e2e/`. They need a browser once:
 `npx playwright install chromium`, or set `E2E_CHANNEL=chrome` to use an
@@ -119,12 +124,10 @@ example the Docker image on `http://localhost:8080/`.
 1. It builds the image. The Docker build runs `vp check` and the unit tests.
 2. It starts that image and runs the browser tests against it, so nginx, the
    security headers and the built files are tested as they will ship.
-3. Only then does it push `ghcr.io/OWNER/REPO:latest` and `:sha-<commit>` for
+3. Only then does it push `ghcr.io/pklaschka/pdf-booklet-imposer:latest` and `:sha-<commit>` for
    amd64 and arm64.
 
-It needs no secrets beyond the built-in `GITHUB_TOKEN`. The package is private
-on first publish; change its visibility in the repository's package settings
-if others should pull it.
+It needs no secrets beyond the built-in `GITHUB_TOKEN`.
 
 ## Licence
 
@@ -132,7 +135,7 @@ Copyright © the Booklet Imposer contributors. Licensed under the
 [European Union Public Licence v. 1.2](LICENSE) (EUPL-1.2).
 
 Bundled third-party components keep their own licences:
-[pdf-lib](https://github.com/Hopding/pdf-lib) (MIT),
+[pdf-lib](https://github.com/cantoo-scribe/pdf-lib) (MIT, the maintained `@cantoo/pdf-lib` fork),
 [pdf.js](https://github.com/mozilla/pdf.js) (Apache-2.0), and the
 [Archivo](https://github.com/Omnibus-Type/Archivo) and
 [IBM Plex Mono](https://github.com/IBM/plex) typefaces (SIL OFL 1.1).
