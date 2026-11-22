@@ -1,0 +1,1324 @@
+/*
+ * Visual world: a prepress finishing table. Key-black header, paper-white
+ * control panel, sheets lying on a green cutting mat. One warm proofing red
+ * for actions. All colours are roles; the stage re-scopes the text roles so
+ * anything written directly on the mat takes its colour from the mat's hue.
+ */
+:root {
+  --font: "Archivo Variable", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --header-h: 56px;
+
+  --key: oklch(0.2 0.02 172);
+  --key-ink: oklch(0.95 0.02 172);
+  --key-muted: oklch(0.76 0.035 172);
+  --key-accent: oklch(0.7 0.17 38);
+
+  --paper: oklch(0.985 0.004 172);
+  --field: oklch(0.955 0.007 172);
+  --ink: oklch(0.22 0.02 172);
+  --muted: oklch(0.45 0.022 172);
+  --line: oklch(0.87 0.012 172);
+
+  --mat: oklch(0.38 0.058 172);
+  --mat-ink: oklch(0.95 0.025 172);
+  --mat-muted: oklch(0.82 0.05 172);
+  --mat-line: oklch(0.5 0.06 172);
+
+  --accent: oklch(0.55 0.2 32);
+  --accent-ink: oklch(0.99 0.01 32);
+  --accent-wash: oklch(0.95 0.035 32);
+
+  --sheet: #fff;
+  --sheet-ink: oklch(0.22 0.02 172);
+  --warn-bg: oklch(0.94 0.07 90);
+  --warn-ink: oklch(0.33 0.07 80);
+  --err-bg: oklch(0.93 0.05 25);
+  --err-ink: oklch(0.38 0.14 28);
+
+  /* Guide colours sit on white paper in both themes, so they never change. */
+  --g-margin: #2563eb;
+  --g-trim: #d6249f;
+  --g-bleed: #e8590c;
+  --g-fold: #0f9d58;
+
+  scrollbar-color: var(--line) transparent;
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ink);
+  background: var(--paper);
+  accent-color: var(--accent);
+  caret-color: var(--accent);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Not an inversion: the mat stays the lit surface, the panel recedes. */
+    --key: oklch(0.14 0.012 172);
+    --paper: oklch(0.2 0.014 172);
+    --field: oklch(0.25 0.018 172);
+    --ink: oklch(0.94 0.015 172);
+    --muted: oklch(0.74 0.03 172);
+    --line: oklch(0.34 0.022 172);
+    --mat: oklch(0.29 0.048 172);
+    --mat-line: oklch(0.41 0.05 172);
+    --accent: oklch(0.7 0.17 38);
+    --accent-ink: oklch(0.17 0.03 38);
+    --accent-wash: oklch(0.3 0.06 38);
+    --warn-bg: oklch(0.32 0.06 85);
+    --warn-ink: oklch(0.92 0.08 90);
+    --err-bg: oklch(0.31 0.08 28);
+    --err-ink: oklch(0.9 0.06 28);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+body {
+  margin: 0;
+  /* Panel and stage scroll on their own, each with reserved scrollbar space, so nothing shifts. */
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+[hidden] {
+  display: none !important;
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- header ---------- */
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: 8px 24px;
+  flex-wrap: wrap;
+  min-height: var(--header-h);
+  padding: 10px 20px;
+  background: var(--key);
+  color: var(--key-ink);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.reg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: var(--key-accent);
+  stroke-width: 1.6;
+}
+.top h1 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  font-stretch: 122%;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.top p {
+  margin: 0;
+  color: var(--key-muted);
+  font-size: 0.9rem;
+}
+
+/* ---------- frame ---------- */
+
+.app {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 440px minmax(0, 1fr);
+  min-height: 0;
+}
+.panel {
+  background: var(--paper);
+  /* No vertical padding here: sticky headings measure from the padding edge and content would show in the gap. */
+  padding: 0 20px;
+  overflow-y: auto;
+  /* Reserve the scrollbar's space so opening a long section does not reflow the panel. */
+  scrollbar-gutter: stable;
+}
+.stage {
+  /* Text roles re-scoped for anything written directly on the mat. */
+  --ink: var(--mat-ink);
+  --muted: var(--mat-muted);
+  --line: var(--mat-line);
+  --field: color-mix(in oklch, var(--mat) 86%, black);
+  background: var(--mat);
+  color: var(--ink);
+  padding: 22px 26px 44px;
+  min-width: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-color: var(--mat-line) transparent;
+}
+
+/* ---------- controls ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font: inherit;
+  font-weight: 650;
+  color: var(--ink);
+  background: var(--field);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition:
+    background-color 0.12s,
+    border-color 0.12s;
+}
+.btn:hover {
+  border-color: var(--muted);
+}
+.btn.key {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+  padding-block: 10px;
+}
+.btn.key:hover {
+  background: color-mix(in oklch, var(--ink) 88%, var(--paper));
+}
+.btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.btn.primary:hover {
+  background: color-mix(in oklch, var(--accent) 90%, white);
+  border-color: transparent;
+}
+.btn.ghost {
+  background: transparent;
+}
+.btn.small {
+  padding: 4px 11px;
+  font-size: 0.875rem;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.btn svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.link {
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  padding: 0;
+  margin-top: 10px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.link:hover {
+  color: var(--ink);
+}
+.link:disabled {
+  opacity: 0.5;
+  cursor: default;
+  text-decoration: none;
+}
+
+input[type="number"],
+input[type="text"],
+select {
+  font: inherit;
+  color: var(--ink);
+  background: var(--field);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 5px 9px;
+  height: 32px;
+}
+input:hover,
+select:hover {
+  border-color: var(--muted);
+}
+select {
+  width: 200px;
+}
+input[type="number"] {
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 0.93rem;
+  padding-right: 40px;
+}
+.unit {
+  position: relative;
+  display: inline-block;
+  width: 200px;
+}
+.pair {
+  display: flex;
+  gap: 6px;
+}
+.pair .unit {
+  width: 122px;
+}
+/* Two fields share a row: give the digits the room instead of the unit. */
+.pair input[type="number"] {
+  padding-right: 32px;
+}
+.unit i {
+  position: absolute;
+  right: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-style: normal;
+  font-size: 0.8rem;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 7px 0;
+}
+.row > span:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 7px 0;
+}
+.check input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+.hint {
+  color: var(--muted);
+  font-size: 0.875rem;
+  margin: 7px 0;
+  text-wrap: pretty;
+}
+.hint:empty {
+  display: none;
+}
+.steps {
+  padding-left: 20px;
+}
+.steps li {
+  margin: 3px 0;
+}
+
+/* ---------- file & templates ---------- */
+
+.file {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 0 14px;
+}
+.templates {
+  padding: 2px 0 14px;
+}
+.templates .row label {
+  flex: 1;
+  font-weight: 700;
+}
+.tpl-actions,
+.tpl-name,
+.tpl-io {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+.tpl-io {
+  gap: 16px;
+}
+.tpl-io .link {
+  margin-top: 0;
+}
+.tpl-name input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---------- sections ---------- */
+
+details {
+  border-top: 1px solid var(--line);
+}
+details[open] {
+  padding-bottom: 14px;
+}
+summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  font-stretch: 108%;
+  height: 48px;
+  padding-right: 4px;
+  list-style: none;
+  background: var(--paper);
+}
+summary::-webkit-details-marker {
+  display: none;
+}
+summary::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  margin-left: auto;
+  margin-right: 4px;
+  border-right: 1.8px solid var(--muted);
+  border-bottom: 1.8px solid var(--muted);
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 0.25s var(--ease-out);
+}
+details[open] > summary::after {
+  transform: translateY(2px) rotate(-135deg);
+}
+.ico {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+h3 {
+  font-size: 0.93rem;
+  font-weight: 700;
+  margin: 18px 0 4px;
+}
+.group-label {
+  margin: 12px 0 5px;
+}
+
+/* Sections slide open and closed (browsers without support just toggle). */
+@media (prefers-reduced-motion: no-preference) {
+  .panel {
+    interpolate-size: allow-keywords;
+  }
+  details::details-content {
+    height: 0;
+    opacity: 0;
+    overflow: clip;
+    transition:
+      height 0.28s ease,
+      opacity 0.22s ease,
+      content-visibility 0.28s allow-discrete;
+  }
+  details[open]::details-content {
+    height: auto;
+    opacity: 1;
+  }
+}
+
+/* ---------- picture choices ---------- */
+
+.choice {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.choice.three {
+  grid-template-columns: repeat(3, 1fr);
+}
+.choice label {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1px;
+  padding: 9px 6px 10px;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  background: var(--field);
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+}
+.choice label:hover {
+  border-color: var(--muted);
+}
+.choice input {
+  position: absolute;
+  opacity: 0;
+}
+.choice label:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+}
+.choice label:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.choice svg {
+  width: 64px;
+  height: 44px;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.choice .paper {
+  fill: var(--paper);
+  stroke: var(--muted);
+  stroke-width: 1.3;
+}
+.choice .axis {
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+.choice .arrow {
+  stroke: var(--accent);
+  stroke-width: 1.6;
+}
+.choice .fold {
+  stroke: var(--accent);
+  stroke-width: 1.3;
+  stroke-dasharray: 3 2;
+}
+.choice .text {
+  stroke: var(--line);
+  stroke-width: 1.6;
+}
+.choice .on {
+  fill: color-mix(in oklch, var(--accent) 24%, var(--paper));
+  stroke: var(--accent);
+  stroke-width: 1.4;
+}
+.choice .off {
+  fill: var(--paper);
+  stroke: var(--muted);
+  stroke-width: 1.1;
+  stroke-dasharray: 3 2.5;
+}
+.choice b {
+  font-weight: 650;
+}
+.choice small {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* ---------- diagrams ---------- */
+
+.diagram {
+  display: block;
+  width: 100%;
+  margin: 10px 0 4px;
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--field);
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.diagram text {
+  fill: var(--muted);
+  stroke: none;
+  font-size: 10px;
+}
+.diagram text.value {
+  fill: var(--ink);
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 10.5px;
+}
+.diagram .sheets {
+  stroke: var(--ink);
+  stroke-width: 1.4;
+}
+.diagram .ruler {
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+.diagram .mark {
+  stroke-width: 1.6;
+}
+.diagram .cut {
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+.diagram .cut.solid {
+  stroke-dasharray: none;
+}
+.diagram .dim,
+.diagram .front {
+  stroke: var(--muted);
+  stroke-width: 1.1;
+}
+.diagram .back {
+  stroke: var(--accent);
+  stroke-width: 1.4;
+  stroke-dasharray: 5 3;
+}
+.diagram .head {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+.diagram .paper {
+  fill: var(--sheet);
+  stroke: var(--muted);
+  stroke-width: 1;
+}
+/* Marks drawn on the white miniature sheet keep paper-ink colour in both themes. */
+.diagram .paper ~ .ruler {
+  stroke: var(--sheet-ink);
+}
+.diagram .g-margin {
+  stroke: var(--g-margin);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+.diagram .g-trim {
+  stroke: var(--g-trim);
+  stroke-width: 1.2;
+}
+.diagram .g-bleed {
+  stroke: var(--g-bleed);
+  stroke-width: 1;
+  stroke-dasharray: 1.5 2.5;
+}
+.diagram .g-fold {
+  stroke: var(--g-fold);
+  stroke-width: 1.2;
+  stroke-dasharray: 5 3;
+}
+.diagram .page {
+  fill: color-mix(in oklch, var(--g-trim) 10%, var(--sheet));
+}
+.diagram path.page {
+  stroke: none;
+}
+.diagram .bleed-fill {
+  fill: color-mix(in oklch, var(--g-bleed) 18%, var(--field));
+}
+.diagram path.page ~ text {
+  fill: var(--sheet-ink);
+}
+
+/* ---------- stage: empty ---------- */
+
+.empty {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--muted);
+  border: 1.5px dashed var(--line);
+  border-radius: 16px;
+  padding: 28px;
+}
+.empty h2 {
+  color: var(--ink);
+  font-size: 1.7rem;
+  font-weight: 800;
+  font-stretch: 116%;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+  margin: 26px 0 8px;
+  max-width: 22ch;
+  text-wrap: balance;
+}
+.empty p {
+  margin: 0;
+  max-width: 46ch;
+  text-wrap: pretty;
+}
+.howto {
+  width: min(100%, 460px);
+  fill: none;
+  stroke-width: 1.5;
+}
+.howto .pg {
+  fill: var(--sheet);
+  stroke: var(--sheet-ink);
+}
+.howto .fold {
+  stroke: var(--g-bleed);
+  stroke-dasharray: 4 3;
+}
+.howto .arr {
+  stroke: var(--mat-muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.howto text {
+  fill: var(--muted);
+  stroke: none;
+  font-size: 11px;
+}
+.howto text.num {
+  fill: var(--sheet-ink);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+/* ---------- stage: work ---------- */
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 12px 16px;
+  flex-wrap: wrap;
+}
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.nav .btn {
+  padding: 6px 8px;
+  border-radius: 999px;
+}
+.keys {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+kbd {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  padding: 1px 5px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+.guides-toggle {
+  margin: 0 0 0 auto;
+}
+
+.strip {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 3px 3px 8px;
+  overflow-x: auto;
+}
+.strip:empty {
+  display: none;
+}
+.tile {
+  flex: none;
+  display: grid;
+  gap: 3px;
+  justify-items: center;
+  padding: 6px 7px 3px;
+  font: inherit;
+  color: var(--mat-muted);
+  background: var(--field);
+  border: 0;
+  border-radius: 10px;
+  outline: 2px solid transparent;
+  outline-offset: 1px;
+  cursor: pointer;
+  transition: outline-color 0.15s;
+}
+.tile:hover {
+  outline-color: var(--mat-line);
+}
+.tile[aria-current] {
+  outline-color: var(--key-accent);
+  color: var(--mat-ink);
+}
+.tile .face {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 56px;
+  background: var(--sheet);
+  border-radius: 2px;
+  color: var(--sheet-ink);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 18px;
+}
+.tile .face.back {
+  background: oklch(0.9 0.012 172);
+}
+.tile .face i {
+  font-style: normal;
+  text-align: center;
+}
+.tile .face i + i {
+  border-left: 1px dashed oklch(0.7 0.02 172);
+}
+.tile b {
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.facts {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 26px;
+  margin: 14px 0 0;
+  padding: 0;
+}
+.facts li {
+  display: grid;
+  gap: 1px;
+}
+.facts li span {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.facts li b {
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 0.93rem;
+}
+
+.legend {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 16px 0 0;
+  padding: 0;
+  font-size: 0.8rem;
+}
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--sheet);
+  color: var(--sheet-ink);
+}
+.legend i {
+  width: 18px;
+  border-top: 2px solid;
+}
+.legend .g-margin {
+  border-color: var(--g-margin);
+  border-top-style: dashed;
+}
+.legend .g-trim {
+  border-color: var(--g-trim);
+}
+.legend .g-bleed {
+  border-color: var(--g-bleed);
+  border-top-style: dotted;
+}
+.legend .g-fold {
+  border-color: var(--g-fold);
+  border-top-style: dashed;
+}
+
+.notes p,
+.recipe {
+  margin: 14px 0 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+  max-width: 75ch;
+}
+.notes p.error {
+  background: var(--err-bg);
+  color: var(--err-ink);
+}
+/* Shown after a download: how to print what was just made. */
+.recipe {
+  display: flex;
+  gap: 12px;
+  background: var(--sheet);
+  color: var(--sheet-ink);
+}
+.recipe svg {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  fill: none;
+  stroke: var(--g-fold);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.recipe b {
+  font-weight: 700;
+}
+.recipe ol {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+.sides {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
+  gap: 24px;
+  margin-top: 20px;
+  transition: opacity 0.15s;
+}
+.sides.busy {
+  opacity: 0.6;
+}
+.sides figure {
+  margin: 0;
+}
+.sides figcaption {
+  font-size: 0.875rem;
+  color: var(--muted);
+  margin-bottom: 7px;
+}
+.sides figcaption b {
+  color: var(--ink);
+  font-weight: 700;
+  font-stretch: 112%;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.8rem;
+}
+.sheet {
+  position: relative;
+  background: var(--sheet);
+  box-shadow:
+    0 1px 0 oklch(0 0 0 / 0.3),
+    0 16px 28px -14px oklch(0 0 0 / 0.55);
+}
+.sides figure.portrait .sheet {
+  max-width: 420px;
+}
+.sides canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/*
+ * The one authored moment: a sheet is laid onto the mat. Only when a file is
+ * opened or another sheet is picked, never on every settings change.
+ */
+@keyframes lay-down {
+  from {
+    opacity: 0;
+    transform: translate(var(--from, 0), 18px) rotate(var(--tilt, -0.6deg)) scale(1.015);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+.sides.enter figure {
+  animation: lay-down 0.52s var(--ease-out) backwards;
+}
+.sides.enter figure:nth-child(2) {
+  --tilt: 0.5deg;
+  animation-delay: 0.07s;
+}
+.sides.enter.forward figure {
+  --from: 36px;
+}
+.sides.enter.backward figure {
+  --from: -36px;
+}
+.recipe {
+  --tilt: 0deg;
+  animation: lay-down 0.4s var(--ease-out) backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sides.enter figure,
+  .recipe {
+    animation: fade-in 0.2s ease-out backwards;
+  }
+  summary::after {
+    transition: none;
+  }
+}
+
+/* Guide overlay */
+.guides {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.guides * {
+  fill: none;
+  stroke-width: 1.25px;
+  vector-effect: non-scaling-stroke;
+}
+.guides .g-margin {
+  stroke: var(--g-margin);
+  stroke-dasharray: 5 4;
+}
+.guides .g-trim {
+  stroke: var(--g-trim);
+}
+.guides .g-bleed {
+  stroke: var(--g-bleed);
+  stroke-dasharray: 2 3;
+}
+.guides .g-fold {
+  stroke: var(--g-fold);
+  stroke-dasharray: 8 4;
+  stroke-width: 1.5px;
+}
+.no-guides .guides {
+  display: none;
+}
+
+/* ---------- drop target: the window becomes a sheet with crop marks ---------- */
+
+.drop-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: color-mix(in oklch, var(--mat) 94%, transparent);
+  color: var(--mat-ink);
+  z-index: 10;
+  pointer-events: none;
+  animation: fade-in 0.15s ease-out;
+}
+.drop-overlay div {
+  position: relative;
+  padding: 44px 64px;
+  font-size: 1.7rem;
+  font-weight: 800;
+  font-stretch: 116%;
+  letter-spacing: -0.015em;
+}
+.drop-overlay svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: var(--mat-ink);
+  stroke-width: 1.5;
+  overflow: visible;
+}
+
+@media (max-width: 900px) {
+  .app {
+    grid-template-columns: 1fr;
+  }
+  body {
+    height: auto;
+    min-height: 100dvh;
+  }
+  .panel,
+  .stage {
+    overflow-y: visible;
+  }
+  #settings {
+    padding-bottom: 28px;
+  }
+  .stage {
+    padding: 18px 16px 32px;
+  }
+  .keys {
+    display: none;
+  }
+}
+
+/* ---------- delight: small responses at meaningful moments ---------- */
+
+/* Register mark clicks round when the imposition has been rebuilt. */
+.reg {
+  transition: transform 0.6s var(--ease-out);
+}
+
+/* The back outline slides to where the print lands. */
+#offsetDiagram .back {
+  transition: transform 0.4s var(--ease-out);
+}
+
+/* What a template changed. */
+.badge {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--accent-wash);
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 650;
+  font-stretch: 100%;
+  animation: fade-in 0.2s ease-out;
+}
+@media (prefers-color-scheme: dark) {
+  .badge {
+    color: var(--ink);
+  }
+}
+@keyframes changed {
+  from {
+    background-color: var(--accent-wash);
+    box-shadow: 0 0 0 5px var(--accent-wash);
+  }
+}
+.row.changed,
+.check.changed,
+.choice.changed {
+  border-radius: 6px;
+  animation: changed 1.8s ease-out;
+}
+
+.hint.error {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--err-bg);
+  color: var(--err-ink);
+}
+
+.bar .btn.primary {
+  min-width: 13.5em;
+}
+
+/* First visit: the three steps arrive in the order they happen. */
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+.howto > * {
+  animation: step-in 0.5s var(--ease-out) backwards;
+}
+.howto > :nth-child(n + 3) {
+  animation-delay: 0.3s;
+}
+.howto > :nth-child(n + 4) {
+  animation-delay: 0.45s;
+}
+.howto > :nth-child(n + 8) {
+  animation-delay: 0.75s;
+}
+.howto > :nth-child(n + 9) {
+  animation-delay: 0.9s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reg,
+  #offsetDiagram .back {
+    transition: none;
+  }
+  .howto > *,
+  .row.changed,
+  .check.changed,
+  .choice.changed {
+    animation: none;
+  }
+}
+
+/* ---------- onboarding ---------- */
+
+.empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 22px;
+}
+.empty-actions .btn {
+  padding: 10px 18px;
+}
+.empty .fine {
+  margin-top: 12px;
+  font-size: 0.875rem;
+}
+
+/* First-booklet steps: tick themselves off, then never come back. */
+.tips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--field);
+  font-size: 0.93rem;
+}
+.tips ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tips li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+}
+.tips li.next {
+  color: var(--ink);
+  font-weight: 650;
+}
+.tips li i {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.tips li.done i {
+  border-color: var(--key-accent);
+  background: var(--key-accent)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23171a19' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 8.5 2.8 2.8L12 5.5'/%3E%3C/svg%3E")
+    center / 14px no-repeat;
+}
+.tips .link {
+  margin: 0 0 0 auto;
+}
+
+/* Point-of-use question about the bleed default. */
+.ask {
+  --ink: var(--warn-ink);
+  --muted: var(--warn-ink);
+  --line: color-mix(in oklch, var(--warn-ink) 45%, transparent);
+  --field: color-mix(in oklch, var(--warn-ink) 12%, transparent);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+  max-width: 75ch;
+}
+.ask > div:first-child {
+  flex: 1 1 32ch;
+}
+.ask-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.recipe .link {
+  color: inherit;
+  margin-top: 8px;
+  text-align: left;
+}
+
+/*
+ * Section headings stay in view like tabs: headings above the open section
+ * stack at the top of the panel, those below it at the bottom. Closed sections
+ * stick as a whole; the open one only pins its heading. "settled" is set by
+ * script once a closing section has finished collapsing.
+ */
+@media (min-width: 901px) {
+  #settings {
+    --tab: 49px; /* heading height plus its rule */
+  }
+  #settings details:nth-of-type(1) {
+    --i: 0;
+  }
+  #settings details:nth-of-type(2) {
+    --i: 1;
+  }
+  #settings details:nth-of-type(3) {
+    --i: 2;
+  }
+  #settings details:nth-of-type(4) {
+    --i: 3;
+  }
+  #settings details.settled:not([open]) {
+    position: sticky;
+    top: calc(var(--i) * var(--tab));
+    bottom: calc((3 - var(--i)) * var(--tab));
+    z-index: 3;
+    background: var(--paper);
+  }
+  #settings details[open] > summary {
+    position: sticky;
+    top: calc(var(--i) * var(--tab));
+    z-index: 2;
+  }
+  /* Room so the last controls can scroll clear of the headings stacked at the bottom. */
+  #settings {
+    padding-bottom: 20px;
+  }
+}
+
+/* The heading at the edge of a pinned stack shades the content passing under it. */
+@media (min-width: 901px) {
+  #settings summary {
+    position: relative;
+  }
+  #settings summary::before {
+    content: "";
+    position: absolute;
+    left: -20px;
+    right: -20px;
+    height: 12px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.18s;
+  }
+  #settings .edge-top > summary::before {
+    top: 100%;
+    border-top: 1px solid var(--line);
+    background: linear-gradient(to bottom, oklch(0.2 0.02 172 / 0.24), transparent);
+    opacity: 1;
+  }
+  #settings .edge-bottom > summary::before {
+    bottom: calc(100% + 1px);
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(to top, oklch(0.2 0.02 172 / 0.24), transparent);
+    opacity: 1;
+  }
+  #settings details[open] > summary {
+    position: sticky;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  #settings .edge-top > summary::before {
+    background: linear-gradient(to bottom, oklch(0 0 0 / 0.45), transparent);
+  }
+  #settings .edge-bottom > summary::before {
+    background: linear-gradient(to top, oklch(0 0 0 / 0.45), transparent);
+  }
+}

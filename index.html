@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Booklet Imposer</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='6' width='28' height='20' rx='2' fill='%23c2410c'/%3E%3Cpath d='M16 6v20' stroke='%23fff' stroke-width='2' stroke-dasharray='3 2'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="brand">
+        <svg class="reg" id="reg" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="6.5" />
+          <path d="M12 1v22M1 12h22" />
+        </svg>
+        <h1>Booklet Imposer</h1>
+      </div>
+      <p>Saddle-stitch imposition in your browser. Files never leave this device.</p>
+    </header>
+
+    <main class="app">
+      <aside class="panel">
+        <div class="file">
+          <button type="button" id="pick" class="btn key">Choose PDF…</button>
+          <input type="file" id="file" accept="application/pdf,.pdf" hidden />
+          <div id="fileInfo" class="hint">or drop a file anywhere on the page</div>
+        </div>
+
+        <div class="templates">
+          <div class="row">
+            <label for="tplSelect">Template</label>
+            <select id="tplSelect"></select>
+          </div>
+          <div class="tpl-actions" id="tplActions">
+            <button type="button" class="btn small" id="tplSave">Save as…</button>
+            <button type="button" class="btn small ghost" id="tplUpdate">Update</button>
+            <button type="button" class="btn small ghost" id="tplDelete">Delete</button>
+          </div>
+          <div class="tpl-name" id="tplNameRow" hidden>
+            <input
+              type="text"
+              id="tplName"
+              placeholder="Template name"
+              maxlength="60"
+              aria-label="Template name"
+            />
+            <button type="button" class="btn small primary" id="tplConfirm">Save</button>
+            <button type="button" class="btn small ghost" id="tplCancel">Cancel</button>
+          </div>
+          <div class="hint" id="tplInfo">
+            Templates keep every setting below, including the duplex offset, in this browser.
+          </div>
+          <div class="tpl-io">
+            <button type="button" class="link" id="tplExport">Export to file</button>
+            <button type="button" class="link" id="tplImport">Import from file</button>
+            <input type="file" id="tplFile" accept="application/json,.json" hidden />
+          </div>
+        </div>
+
+        <form id="settings" autocomplete="off">
+          <details name="section" open>
+            <summary>
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="2" y="5" width="20" height="14" rx="1.5" />
+                <rect x="5" y="8" width="14" height="8" stroke-dasharray="2 1.5" /></svg
+              >Sheet &amp; margins
+            </summary>
+            <label class="row">
+              <span>Sheet size</span>
+              <select name="paper" id="paper"></select>
+            </label>
+            <div class="row" data-show="paper=custom">
+              <span>Width × height</span>
+              <span class="pair">
+                <span class="unit"
+                  ><input type="number" name="customW" min="10" step="1" /><i>mm</i></span
+                >
+                <span class="unit"
+                  ><input type="number" name="customH" min="10" step="1" /><i>mm</i></span
+                >
+              </span>
+            </div>
+            <label class="row">
+              <span>Margin on every edge</span>
+              <span class="unit"
+                ><input type="number" name="margin" min="0" step="0.5" /><i>mm</i></span
+              >
+            </label>
+            <label class="row" data-hide="paper=auto">
+              <span>Scaling</span>
+              <select name="scaling">
+                <option value="fit">Fit inside margins</option>
+                <option value="shrink">Shrink only</option>
+                <option value="none">None (100 %)</option>
+              </select>
+            </label>
+            <p class="hint">
+              The booklet, including bleed and crop marks, is scaled to stay inside the margins. Use
+              your printer's non-printable border (typically 4–5 mm).
+            </p>
+            <svg
+              class="diagram"
+              id="sheetDiagram"
+              viewBox="0 0 300 148"
+              role="img"
+              aria-label="Sheet layout"
+            ></svg>
+            <label class="row">
+              <span>Blank pages go</span>
+              <select name="blanks">
+                <option value="end">At the end</option>
+                <option value="beforeLast">Before the back cover</option>
+              </select>
+            </label>
+          </details>
+
+          <details name="section">
+            <summary>
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M7 2v4M2 7h4M17 2v4M22 7h-4M7 22v-4M2 17h4M17 22v-4M22 17h-4" />
+                <rect x="8.5" y="8.5" width="7" height="7" /></svg
+              >Bleed &amp; crop marks
+            </summary>
+            <label class="row">
+              <span>Bleed in the PDF</span>
+              <select name="bleedMode">
+                <option value="manual">Enter manually</option>
+                <option value="auto">Detect (TrimBox)</option>
+              </select>
+            </label>
+            <label class="row" data-show="bleedMode=manual">
+              <span>Bleed on each edge</span>
+              <span class="unit"
+                ><input type="number" name="bleed" min="0" step="0.5" /><i>mm</i></span
+              >
+            </label>
+            <p class="hint" id="bleedInfo"></p>
+            <label class="check"><input type="checkbox" name="printBleed" /> Print the bleed</label>
+            <label class="check"><input type="checkbox" name="cropMarks" /> Crop marks</label>
+            <div data-show="cropMarks=true">
+              <label class="check"
+                ><input type="checkbox" name="foldMarks" /> Fold marks at the spine</label
+              >
+              <label class="row">
+                <span>Mark length</span>
+                <span class="unit"
+                  ><input type="number" name="markLength" min="1" step="0.5" /><i>mm</i></span
+                >
+              </label>
+              <label class="row">
+                <span>Mark distance from trim</span>
+                <span class="unit"
+                  ><input type="number" name="markOffset" min="0" step="0.5" /><i>mm</i></span
+                >
+              </label>
+              <p class="hint">
+                Marks never start inside the bleed, even if the distance is smaller.
+              </p>
+            </div>
+            <svg
+              class="diagram"
+              id="marksDiagram"
+              viewBox="0 0 300 120"
+              role="img"
+              aria-label="Page corner with bleed and crop marks"
+            ></svg>
+          </details>
+
+          <details name="section">
+            <summary>
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M21 4 4 12l17 8M21 7.5 9 12l12 4.5M21 10.5 14 12l7 1.5" /></svg
+              >Creep &amp; centre gutter
+            </summary>
+            <label class="row">
+              <span>Creep compensation</span>
+              <select name="creepMode">
+                <option value="auto">Automatic</option>
+                <option value="manual">Manual</option>
+                <option value="off">Off</option>
+              </select>
+            </label>
+            <div data-show="creepMode=auto">
+              <label class="row">
+                <span>Paper</span>
+                <select name="paperType">
+                  <option value="uncoated">Uncoated / office</option>
+                  <option value="silk">Coated silk / matt</option>
+                  <option value="gloss">Coated gloss</option>
+                  <option value="bulky">Bulky book paper</option>
+                  <option value="custom">Known thickness</option>
+                </select>
+              </label>
+              <label class="row" data-hide="paperType=custom">
+                <span>Paper weight</span>
+                <span class="unit"
+                  ><input type="number" name="paperWeight" min="30" step="5" /><i>g/m²</i></span
+                >
+              </label>
+              <label class="row" data-show="paperType=custom">
+                <span>Paper thickness</span>
+                <span class="unit"
+                  ><input type="number" name="paperThickness" min="0" step="0.01" /><i>mm</i></span
+                >
+              </label>
+            </div>
+            <label class="row" data-show="creepMode=manual">
+              <span>Innermost sheet shift</span>
+              <span class="unit"
+                ><input type="number" name="creep" min="0" step="0.1" /><i>mm</i></span
+              >
+            </label>
+            <label class="row">
+              <span>Centre gutter</span>
+              <select name="gutterMode">
+                <option value="auto">Automatic</option>
+                <option value="manual">Manual</option>
+              </select>
+            </label>
+            <label class="row" data-show="gutterMode=manual">
+              <span>Space between pages</span>
+              <span class="unit"
+                ><input type="number" name="gutter" min="0" step="0.5" /><i>mm</i></span
+              >
+            </label>
+            <svg
+              class="diagram"
+              viewBox="0 0 300 92"
+              role="img"
+              aria-label="Cross-section of nested sheets: inner sheets stick out at the fore-edge and are cut off when trimmed"
+            >
+              <g class="sheets">
+                <path d="M236 14 22 46l214 32" />
+                <path d="M244 21 30 46l214 25" />
+                <path d="M252 28 38 46l214 18" />
+                <path d="M260 35 46 46l214 11" />
+              </g>
+              <path class="cut" d="M236 4v84" />
+              <path class="dim" d="M236 46h24M236 43v6M260 43v6" />
+              <text x="266" y="42">creep</text>
+              <text x="230" y="9" text-anchor="end">trim</text>
+              <text x="20" y="30">spine</text>
+              <path class="dim" d="M22 46h24M22 43v6M46 43v6" />
+            </svg>
+            <p class="hint" id="creepInfo"></p>
+            <p class="hint">
+              Inner sheets are shifted towards the spine by one paper thickness each, so the outer
+              margins stay equal after the fore-edge is trimmed. The automatic gutter opens the
+              outer sheets just enough that nothing disappears into the fold. Turn creep off if you
+              will not trim.
+            </p>
+          </details>
+
+          <details name="section">
+            <summary>
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="3" y="6" width="18" height="12" rx="1.5" />
+                <path d="M12 3v18" stroke-dasharray="2 1.5" />
+                <path d="M8 10.5c2-2 6-2 8 0M16 10.5l-.3-2.2M16 10.5l-2.2.3" /></svg
+              >Duplex printing
+            </summary>
+            <div class="group-label" id="flipLabel">Printer flips on</div>
+            <div class="choice" role="radiogroup" aria-labelledby="flipLabel">
+              <label>
+                <input type="radio" name="flip" value="short" />
+                <svg viewBox="0 0 64 44" aria-hidden="true">
+                  <rect class="paper" x="12" y="8" width="44" height="28" rx="1.5" />
+                  <path class="axis" d="M12 5v34" />
+                  <path class="arrow" d="M24 16c8-6 16-6 22 0M46 16l-1-5M46 16l-5 1" />
+                </svg>
+                <b>Short edge</b>
+                <small>Standard for booklets</small>
+              </label>
+              <label>
+                <input type="radio" name="flip" value="long" />
+                <svg viewBox="0 0 64 44" aria-hidden="true">
+                  <rect class="paper" x="10" y="10" width="44" height="28" rx="1.5" />
+                  <path class="axis" d="M7 10h50" />
+                  <path class="arrow" d="M38 17c5 4 5 10 0 14M38 31l5-.5M38 31l.5-5" />
+                </svg>
+                <b>Long edge</b>
+                <small>Backs are turned 180°</small>
+              </label>
+            </div>
+            <div class="group-label" id="orientLabel">Sheet orientation</div>
+            <div class="choice" role="radiogroup" aria-labelledby="orientLabel">
+              <label>
+                <input type="radio" name="orientation" value="landscape" />
+                <svg viewBox="0 0 64 44" aria-hidden="true">
+                  <rect class="paper" x="10" y="8" width="44" height="28" rx="1.5" />
+                  <path class="fold" d="M32 8v28" />
+                  <path class="text" d="M15 15h12M15 20h12M15 25h8M37 15h12M37 20h12M37 25h8" />
+                </svg>
+                <b>Landscape</b>
+                <small>Fold runs top to bottom</small>
+              </label>
+              <label>
+                <input type="radio" name="orientation" value="portrait" />
+                <svg viewBox="0 0 64 44" aria-hidden="true">
+                  <rect class="paper" x="18" y="2" width="28" height="40" rx="1.5" />
+                  <path class="fold" d="M18 22h28" />
+                  <path class="text" d="M25 6v11M30 6v11M35 6v7M25 27v11M30 27v11M35 27v7" />
+                </svg>
+                <b>Portrait</b>
+                <small>Sheet rotated 90°</small>
+              </label>
+            </div>
+            <div class="group-label" id="sidesLabel">Output</div>
+            <div class="choice three" role="radiogroup" aria-labelledby="sidesLabel">
+              <label>
+                <input type="radio" name="sides" value="both" />
+                <svg viewBox="0 0 64 44" aria-hidden="true">
+                  <rect class="on" x="18" y="6" width="36" height="24" rx="1.5" />
+                  <rect class="on" x="10" y="14" width="36" height="24" rx="1.5" />
+                </svg>
+                <b>Both sides</b>
+                <small>Duplex printer</small>
+              </label>
+              <label>
+                <input type="radio" name="sides" value="front" />
+                <svg viewBox="0 0 64 44" aria-hidden="true">
+                  <rect class="off" x="18" y="6" width="36" height="24" rx="1.5" />
+                  <rect class="on" x="10" y="14" width="36" height="24" rx="1.5" />
+                </svg>
+                <b>Fronts</b>
+                <small>Manual, pass 1</small>
+              </label>
+              <label>
+                <input type="radio" name="sides" value="back" />
+                <svg viewBox="0 0 64 44" aria-hidden="true">
+                  <rect class="on" x="18" y="6" width="36" height="24" rx="1.5" />
+                  <rect class="off" x="10" y="14" width="36" height="24" rx="1.5" />
+                </svg>
+                <b>Backs</b>
+                <small>Manual, pass 2</small>
+              </label>
+            </div>
+            <p class="hint">
+              Booklets need a short-edge flip. If your printer or driver only flips on the long
+              edge, pick that here and every back side is turned upside down to match.
+              Front/back-only output is for manual duplexing.
+            </p>
+
+            <h3>Back-side offset</h3>
+            <div class="row">
+              <span>X / Y</span>
+              <span class="pair">
+                <span class="unit"><input type="number" name="offsetX" step="0.1" /><i>mm</i></span>
+                <span class="unit"><input type="number" name="offsetY" step="0.1" /><i>mm</i></span>
+              </span>
+            </div>
+            <svg class="diagram" id="offsetDiagram" viewBox="0 0 300 112" role="img"></svg>
+            <p class="hint">
+              Where the back print lands relative to the front, seen from the back (exaggerated).
+              The booklet's back sides are moved the opposite way to cancel it.
+            </p>
+            <h3>Measuring it</h3>
+            <svg
+              class="diagram"
+              viewBox="0 0 300 70"
+              role="img"
+              aria-label="Example: the front line crosses the back ruler at 0.5"
+            >
+              <path
+                class="ruler"
+                d="M30 34v16M54 40v10M78 34v16M102 40v10M126 34v16M150 28v22M174 34v16M198 40v10M222 34v16M246 40v10M270 34v16M30 50h240"
+              />
+              <g text-anchor="middle">
+                <text x="30" y="62">2.5</text>
+                <text x="78" y="62">1.5</text>
+                <text x="126" y="62">0.5</text>
+                <text x="150" y="62">0</text>
+                <text x="174" y="62">-0.5</text>
+                <text x="222" y="62">-1.5</text>
+                <text x="270" y="62">-2.5</text>
+              </g>
+              <path class="cut solid" d="M126 6v52" />
+              <text x="132" y="14">front line shows through: X = 0.5</text>
+            </svg>
+            <ol class="hint steps">
+              <li>
+                Download the calibration sheet and print it double-sided at 100 %, flipping as
+                chosen above.
+              </li>
+              <li>
+                Hold it against a light, back side facing you, and read where the front cross hits
+                the two rulers.
+              </li>
+              <li>
+                Add the readings to the X and Y values here. Reprint to check: both lines should sit
+                on 0.
+              </li>
+            </ol>
+            <button type="button" id="calibration" class="btn ghost">
+              Download calibration sheet
+            </button>
+          </details>
+
+          <button type="button" id="reset" class="link">Reset all settings</button>
+        </form>
+      </aside>
+
+      <section class="stage" id="stage">
+        <div class="empty" id="empty">
+          <svg class="howto" viewBox="0 0 420 118" aria-hidden="true">
+            <g class="pg">
+              <rect x="34" y="14" width="44" height="62" rx="2" />
+              <rect x="26" y="20" width="44" height="62" rx="2" />
+              <rect x="18" y="26" width="44" height="62" rx="2" />
+            </g>
+            <text class="num" x="40" y="63" text-anchor="middle">1</text>
+            <path class="arr" d="M104 55h34M138 55l-7-5M138 55l-7 5" />
+            <g class="pg"><rect x="160" y="24" width="100" height="62" rx="2" /></g>
+            <path class="fold" d="M210 24v62" />
+            <text class="num" x="185" y="62" text-anchor="middle">8</text>
+            <text class="num" x="235" y="62" text-anchor="middle">1</text>
+            <path class="arr" d="M282 55h34M316 55l-7-5M316 55l-7 5" />
+            <g class="pg">
+              <path d="M366 30v60l-34-10V20z" />
+              <path d="M366 30v60l34-10V20z" />
+            </g>
+            <path class="fold" d="M366 30v60" />
+            <text x="40" y="110" text-anchor="middle">Your PDF</text>
+            <text x="210" y="110" text-anchor="middle">Imposed sheets</text>
+            <text x="366" y="110" text-anchor="middle">Fold and staple</text>
+          </svg>
+          <h2>Drop a PDF to impose it as a booklet</h2>
+          <p>Pages are reordered and placed two-up so the folded stack reads in order.</p>
+          <div class="empty-actions">
+            <button type="button" id="pick2" class="btn primary">Choose a PDF</button>
+            <button type="button" id="sample" class="btn ghost">Try the sample booklet</button>
+          </div>
+          <p class="fine">You see the result straight away. Nothing is uploaded.</p>
+        </div>
+
+        <div class="work" id="work" hidden>
+          <div class="bar">
+            <div class="nav">
+              <button type="button" id="prev" class="btn ghost" aria-label="Previous sheet">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" /></svg>
+              </button>
+              <span id="sheetLabel">Sheet 1 of 1</span>
+              <button type="button" id="next" class="btn ghost" aria-label="Next sheet">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" /></svg>
+              </button>
+              <span class="keys"><kbd>←</kbd> <kbd>→</kbd> also work</span>
+            </div>
+            <label class="check guides-toggle"
+              ><input type="checkbox" id="guides" checked /> Guides</label
+            >
+            <button type="button" id="download" class="btn primary">Download booklet PDF</button>
+          </div>
+          <div class="strip" id="strip" aria-label="Sheets"></div>
+          <ul class="facts" id="facts"></ul>
+          <ul class="legend" id="legend">
+            <li><i class="g-margin"></i>Margin</li>
+            <li><i class="g-trim"></i>Trim (finished page)</li>
+            <li><i class="g-bleed"></i>Bleed</li>
+            <li><i class="g-fold"></i>Fold</li>
+          </ul>
+          <div class="notes" id="notes"></div>
+          <div class="ask" id="bleedAsk" hidden></div>
+          <div class="tips" id="tips" hidden></div>
+          <div class="recipe" id="recipe" hidden></div>
+          <div class="sides" id="sides"></div>
+        </div>
+      </section>
+    </main>
+
+    <div class="drop-overlay" id="overlay" hidden>
+      <div>
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <path
+            vector-effect="non-scaling-stroke"
+            d="M0 -14V-4M-14 0H-4M100 -14V-4M114 0H104M0 114V104M-14 100H-4M100 114V104M114 100H104"
+          />
+        </svg>
+        Drop it on the mat
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

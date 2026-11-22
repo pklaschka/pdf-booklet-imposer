@@ -1,0 +1,36 @@
+{
+  "name": "pdf-booklet-imposer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "In-browser PDF booklet imposition (saddle stitch) with creep, crop marks, bleed and duplex calibration",
+  "license": "EUPL-1.2",
+  "type": "module",
+  "scripts": {
+    "assets": "node scripts/copy-pdfjs-assets.mjs",
+    "predev": "npm run assets",
+    "dev": "vp dev",
+    "prebuild": "npm run assets",
+    "check": "vp check",
+    "build": "vp build",
+    "preview": "vp preview",
+    "test": "vp test run"
+  },
+  "dependencies": {
+    "@fontsource-variable/archivo": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.5.438"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2",
+    "vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000",
+    "vite-plus": "1.7.0"
+  },
+  "overrides": {
+    "vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000"
+  },
+  "allowScripts": {
+    "fsevents": false
+  }
+}
